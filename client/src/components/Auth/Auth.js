@@ -8,6 +8,10 @@ import {
   Container,
 } from "@material-ui/core";
 
+import jwt_decode from 'jwt-decode';
+
+import { useDispatch } from "react-redux";
+import { useHistory } from "react-router-dom";
 import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
 
 import useStyles from "./styles";
@@ -16,18 +20,42 @@ import Input from "./Input";
 import { GoogleLogin, googleLogout } from "@react-oauth/google";
 
 import Icon from "./icon";
+import { AUTH } from "../../constants/actionTypes";
+
+import { signin, signup } from '../../actions/auth';
+
+const initialState = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '' };
 
 const Auth = () => {
   const classes = useStyles();
 
   const [showPassword, setShowPassword] = useState(false);
   const [isSignup, setIsSignUp] = useState(false);
+  const [formData, setFormData] = useState(initialState);
+  const dispatch = useDispatch();
+
+  const history = useHistory();
 
   //   let isSignup = false;
 
-  const handleSubmit = () => {};
+  const handleSubmit = (e) => {
+      e.preventDefault();
 
-  const handleChange = () => {};
+      // console.log(formData);
+
+      if(isSignup) {
+        dispatch(signup(formData, history));
+      } else {
+        dispatch(signin(formData, history));
+      }
+
+  };
+
+  const handleChange = (e) => {
+
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  };
 
   const handleShowPassword = () =>
     setShowPassword((prevShowPassword) => !prevShowPassword);
@@ -38,11 +66,30 @@ const Auth = () => {
   };
 
   const googleSuccess = (res) => {
-    console.log(res);
+    // console.log(res);
+
+    const decoded = jwt_decode(res?.credential);
+
+    console.log(decoded);
+
+    const result = decoded;
+    const token = decoded?.sub;
+
+    try {
+
+      dispatch({ type: AUTH, data : { result, token } });
+
+      history.push('/');
+
+    } catch(error) {
+      console.log(error.message);        
+    }
+    
+
   };
 
   const googleFailure = (error) => {
-    console.log("Error !!!");
+    console.log("Google Sign In was Unsuccessful. Try Again Later !!!");
   };
 
   return (
